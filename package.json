@@ -1,0 +1,17 @@
+{
+  "name": "node-ble-wrapper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node example.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "github.com/wric",
+  "license": "MIT",
+  "dependencies": {
+    "node-ble": "^1.7.0"
+  }
+}
