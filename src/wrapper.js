@@ -2,13 +2,13 @@ import { createBluetooth } from 'node-ble'
 import { exit } from 'process'
 import { log, noop, sleep } from './utils.js'
 
-async function nodeBleWrapper (uuid, onNotify = noop) {
+async function nodeBleWrapper (uuid, onNotify = noop, connectionAttempts = 0) {
   let characteristics = []
 
   async function fn (firstRun = false) {
     log(firstRun ? 'starting' : 'restarting')
     characteristics = []
-    characteristics = await main(uuid, fn, onNotify)
+    characteristics = await main(uuid, fn, onNotify, connectionAttempts)
     while (true) {
       await sleep(100)
     }
@@ -25,7 +25,7 @@ async function nodeBleWrapper (uuid, onNotify = noop) {
   return { getCharacteristics: () => characteristics }
 }
 
-async function main (uuid, onDisconnect, onNotify) {
+async function main (uuid, onDisconnect, onNotify, connectionAttempts) {
   const { bluetooth, destroy } = createBluetooth()
 
   const adapter = await bluetooth.defaultAdapter()
@@ -37,7 +37,7 @@ async function main (uuid, onDisconnect, onNotify) {
     onDisconnect()
   })
 
-  await connectDevice(device)
+  await connectDevice(device, 0, connectionAttempts)
   const gatt = await device.gatt()
   const services = await getServices(gatt)
   const rawCharacteristics = await Promise.all(services.map(getCharacteristics))
