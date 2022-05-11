@@ -77,7 +77,7 @@ async function connectDevice (device, attempts = 0, maxAttempts = 0) {
       error.type === 'org.bluez.Error.Failed' &&
       error.text === 'Operation already in progress'
     ) {
-      log('dbus is buys - backing of 5 s')
+      log('dbus is busy - backing of 5 s')
       await sleep(5000)
       return await connectDevice(device, attempts, maxAttempts)
     }
