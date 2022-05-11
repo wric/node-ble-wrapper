@@ -2,13 +2,18 @@ import { createBluetooth } from 'node-ble'
 import { exit } from 'process'
 import { log, noop, sleep } from './utils.js'
 
-async function nodeBleWrapper (uuid, onNotify = noop, connectionAttempts = 0) {
+async function nodeBleWrapper (
+  uuid,
+  onNotify = noop,
+  onLog = log,
+  connectionAttempts = 0
+) {
   let characteristics = []
 
   async function fn (firstRun = false) {
-    log(firstRun ? 'starting' : 'restarting')
+    onLog(firstRun ? 'starting' : 'restarting')
     characteristics = []
-    characteristics = await main(uuid, fn, onNotify, connectionAttempts)
+    characteristics = await main(uuid, fn, onNotify, connectionAttempts, onLog)
     while (true) {
       await sleep(100)
     }
@@ -17,7 +22,7 @@ async function nodeBleWrapper (uuid, onNotify = noop, connectionAttempts = 0) {
   try {
     fn(true)
   } catch (error) {
-    log('error!')
+    onLog('error!')
     console.error(error)
     exit(1)
   }
@@ -25,7 +30,7 @@ async function nodeBleWrapper (uuid, onNotify = noop, connectionAttempts = 0) {
   return { getCharacteristics: () => characteristics }
 }
 
-async function main (uuid, onDisconnect, onNotify, connectionAttempts) {
+async function main (uuid, onDisconnect, onNotify, connectionAttempts, onLog) {
   const { bluetooth, destroy } = createBluetooth()
 
   const adapter = await bluetooth.defaultAdapter()
@@ -37,7 +42,7 @@ async function main (uuid, onDisconnect, onNotify, connectionAttempts) {
     onDisconnect()
   })
 
-  await connectDevice(device, 0, connectionAttempts)
+  await connectDevice(device, 0, connectionAttempts, onLog)
   const gatt = await device.gatt()
   const services = await getServices(gatt)
   const rawCharacteristics = await Promise.all(services.map(getCharacteristics))
@@ -58,10 +63,10 @@ async function main (uuid, onDisconnect, onNotify, connectionAttempts) {
   return characteristics
 }
 
-async function connectDevice (device, attempts = 0, maxAttempts = 0) {
+async function connectDevice (device, attempts = 0, maxAttempts = 0, onLog) {
   attempts += 1
 
-  log(`connecting [${attempts}/${maxAttempts}]`)
+  onLog(`connecting [${attempts}/${maxAttempts}]`)
 
   // Hacky...
   // node-ble adds a callback for each time device.connect()
@@ -77,9 +82,9 @@ async function connectDevice (device, attempts = 0, maxAttempts = 0) {
       error.type === 'org.bluez.Error.Failed' &&
       error.text === 'Operation already in progress'
     ) {
-      log('dbus is busy - backing of 5 s')
+      onLog('dbus is busy - backing of 5 s')
       await sleep(5000)
-      return await connectDevice(device, attempts, maxAttempts)
+      return await connectDevice(device, attempts, maxAttempts, onLog)
     }
 
     if (error.text === 'le-connection-abort-by-local') {
@@ -87,11 +92,11 @@ async function connectDevice (device, attempts = 0, maxAttempts = 0) {
       // In that schenario we just want to retry until eventually our
       // maxAttemps are reached.
       if (maxAttempts > 0 && attempts === maxAttempts) {
-        log(`max connection attempts reached [${attempts}/${maxAttempts}]`)
+        onLog(`max connection attempts reached [${attempts}/${maxAttempts}]`)
         exit(0)
       }
 
-      return await connectDevice(device, attempts, maxAttempts)
+      return await connectDevice(device, attempts, maxAttempts, onLog)
     }
 
     // Any other error is considered un-expected and we re-throw it.
