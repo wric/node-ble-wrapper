@@ -4,16 +4,16 @@ import { log, noop, sleep } from './utils.js'
 
 async function nodeBleWrapper (
   uuid,
+  connectionAttempts = 0,
   onNotify = noop,
-  onLog = log,
-  connectionAttempts = 0
+  onLog = log
 ) {
   let characteristics = []
 
   async function fn (firstRun = false) {
     onLog(firstRun ? 'starting' : 'restarting')
     characteristics = []
-    characteristics = await main(uuid, fn, onNotify, connectionAttempts, onLog)
+    characteristics = await main(uuid, connectionAttempts, fn, onNotify, onLog)
     while (true) {
       await sleep(100)
     }
@@ -30,7 +30,7 @@ async function nodeBleWrapper (
   return { getCharacteristics: () => characteristics }
 }
 
-async function main (uuid, onDisconnect, onNotify, connectionAttempts, onLog) {
+async function main (uuid, connectionAttempts, onDisconnect, onNotify, onLog) {
   const { bluetooth, destroy } = createBluetooth()
 
   const adapter = await bluetooth.defaultAdapter()
