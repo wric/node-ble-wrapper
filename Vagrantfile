@@ -42,13 +42,8 @@ Vagrant.configure("2") do |config|
   # Ansible, Chef, Docker, Puppet and Salt are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    apt-get update
-    apt-get ugrade -y
-    apt-get install -y bluetooth dbus
-    curl -o- https://github.com/nvm-sh/nvm/blob/v0.39.1/install.sh | bash
-    source ~/.nvm/nvm.sh
-    source ~/.bashrc
-    nvm install --lts
+    chmod +x /home/vagrant/project/prepare.sh
+    bash /home/vagrant/project/prepare.sh
   SHELL
 
   config.vm.provider "virtualbox" do |vb|
