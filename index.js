@@ -6,9 +6,8 @@ async function NodeBleWrapper (uuid, onNotify) {
 
   async function init () {
     characteristics = []
-    const [chars, des] = await main(uuid, init)
-    characteristics = chars
-    destroy = des
+    destroy = noop
+    ;[characteristics, destroy] = await main(uuid, init)
     await subscribe(characteristics, onNotify)
 
     while (true) {
