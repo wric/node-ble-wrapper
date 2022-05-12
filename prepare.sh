@@ -4,8 +4,9 @@ apt-get update
 apt-get ugrade -y
 apt-get install -y bluetooth dbus
 
-## A your user:
-# curl -o- https://github.com/nvm-sh/nvm/blob/v0.39.1/install.sh | bash
-# source ~/.nvm/nvm.sh
-# source ~/.bashrc
-# nvm install --lts
+echo ""
+echo "A your user:"
+echo "curl -o- https://github.com/nvm-sh/nvm/blob/v0.39.1/install.sh | bash"
+echo "source ~/.nvm/nvm.sh"
+echo "source ~/.bashrc"
+echo "nvm install --lts"
