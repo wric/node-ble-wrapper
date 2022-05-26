@@ -1,5 +1,8 @@
 import { createBluetooth } from 'node-ble'
 
+const MAX_FAILED_CONNECTION_ATTEMPTS =
+  process.env.MAX_FAILED_CONNECTION_ATTEMPTS || 0
+
 async function NodeBleWrapper (uuid, onNotify) {
   let characteristics = []
   let destroy = noop
@@ -43,7 +46,9 @@ async function main (uuid, onDisconnect) {
 }
 
 async function connect (device, attempt = 1) {
-  // prevent adding mulitple connect-callbacks
+  const connectStart = Date.now()
+
+  // Prevent adding mulitple connect-callbacks.
   device.helper.removeAllListeners('PropertiesChanged')
 
   try {
@@ -51,21 +56,29 @@ async function connect (device, attempt = 1) {
   } catch (error) {
     if (error.type === 'org.bluez.Error.Failed') {
       if (error.text === 'Operation already in progress') {
-        // 'Operation already in progress' = dbus busy
+        // 'Operation already in progress' == dbus busy.
         await sleep(2000)
         return await connect(device)
       }
-      if (error.text === 'le-connection-abort-by-local') {
-        // 'le-connection-abort-by-local' = time out
-        return await connect(device)
+
+      if (
+        error.text === 'le-connection-abort-by-local' ||
+        error.text === 'Software caused connection abort'
+      ) {
+        // My Ubuntu VM throws 'le-connection-abort-by-local' on time out,
+        // while my Pi Zero throws 'Software caused connection abort'. It
+        // seems to happen ~40 s from starting connection attempt. This is
+        // a potentially hacky solution to hadle it.
+        if (Date.now() - connectStart > 30 * 1000) {
+          // Probably a time out?
+          return await connect(device)
+        }
       }
     }
 
-    if (attempt <= 3) {
+    if (attempt <= MAX_FAILED_CONNECTION_ATTEMPTS) {
       console.error(`Unexpected error (${attempt}):`, error)
       return await connect(device, attempt + 1)
-    } else {
-      console.error('Maximum number of attempts done.')
     }
 
     throw error
