@@ -42,7 +42,7 @@ async function main (uuid, onDisconnect) {
   return [characteristics.flat(), destroy]
 }
 
-async function connect (device) {
+async function connect (device, attempt = 1) {
   // prevent adding mulitple connect-callbacks
   device.helper.removeAllListeners('PropertiesChanged')
 
@@ -59,6 +59,13 @@ async function connect (device) {
         // 'le-connection-abort-by-local' = time out
         return await connect(device)
       }
+    }
+
+    if (attempt <= 3) {
+      console.error(`Unexpected error (${attempt}):`, error)
+      return await connect(device, failAttempt + 1)
+    } else {
+      console.error('Maximum number of attempts done.')
     }
 
     throw error
