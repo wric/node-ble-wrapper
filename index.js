@@ -63,7 +63,7 @@ async function connect (device, attempt = 1) {
 
     if (attempt <= 3) {
       console.error(`Unexpected error (${attempt}):`, error)
-      return await connect(device, failAttempt + 1)
+      return await connect(device, attempt + 1)
     } else {
       console.error('Maximum number of attempts done.')
     }
